@@ -1,0 +1,67 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>
+        DiagramsUI
+    </title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link href="components/dui/style.css" rel="stylesheet">
+    <script src="components/tools/common.js"></script>
+    <script src="components/dui/Main.js"></script>
+</head>
+<body>
+<div class="ui_helper" style="display:none;">
+    <ul>
+        <li><a href="">Commencer</a></li>
+        <li><a href="">Etape</a></li>
+        <li><a href="">Texte</a></li>
+        <li><a href="">Icône</a></li>
+    </ul>
+</div>
+<div class="builder_container">
+    <div class="svg" id="tree">
+        <svg width="100%" height="100%" class="design_mode2">
+            <defs>
+                <marker id="arrowRight" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#000"></path>
+                </marker>
+                <marker id="arrowLeft" markerWidth="10" markerHeight="10" refX="2" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M9,0 L9,6 L0,3 z" fill="#000"></path>
+                </marker>
+            </defs>
+        </svg>
+    </div>
+    <div class="properties_editor">
+        <p>
+            <textarea id="description" rows="30" style="width: 100%;resize:none;border:none;">Sequential:
+    columns:
+        user:Utilisateur
+        site:exemple.fr
+        oauth2:Oauth2
+        idp:IDP
+    sequence:Hello Sequence 1
+        user:Visite
+        user->site
+        site:non connecté
+        site->oauth2
+        oauth2:Dans le SSO
+        oauth2->idp
+        idp->idp
+        idp-->site
+        site:Test
+        ---
+        site:Hello world
+---
+    sequence:Hello Sequence 2
+        user->oauth2
+        oauth2:bouboup
+</textarea>
+            <input type="button" value="Dessiner" id="draw_button">
+        </p>
+    </div>
+</div>
+</body>
+</html>
