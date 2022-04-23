@@ -36,20 +36,22 @@
     </div>
     <div class="properties_editor">
         <p>
-            <textarea id="description" rows="30" style="width: 100%;resize:none;border:none;">Sequential:
-    columns:
+            <textarea id="description" rows="30" style="width: 100%;resize:none;border:none;">Sequential
+    columns
         user:Utilisateur
         site:exemple.fr
         oauth2:Oauth2
         idp:IDP
     sequence:Hello Sequence 1
         user:Visite
-        user->site
+        user->site:Description de segment
         site:non connecté
         site->oauth2
         oauth2:Dans le SSO
-        oauth2->idp
+        oauth2<->idp
+        idp:bouboup
         idp->idp
+        idp:second part
         idp-->site
         site:Test
         ---

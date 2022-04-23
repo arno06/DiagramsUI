@@ -8,6 +8,7 @@
 
     class Sequence{
         constructor(pTitle = null, pColumns = []){
+            this.direction = "right";
             this.columns = pColumns.concat([]);
             this.elements = [];
             if( pTitle != null){
@@ -73,41 +74,62 @@
                             fo.setAttribute("width", div.offsetWidth);
                             fo.setAttribute("x", col.x + (pDistance>>1) - (div.offsetWidth>>1));
                         }
-                        cols[el.column].xBeforeText = Number(fo.getAttribute("x"));
-                        cols[el.column].xAfterText = Number(fo.getAttribute("x")) + div.offsetWidth;
+                        let x1 = Number(fo.getAttribute("x"));
+                        let x2 = x1 + div.offsetWidth;
+                        if(this.direction === "right"){
+                            cols[el.column].xBeforeText = x1;
+                            cols[el.column].xAfterText = x2;
+                        }else{
+                            cols[el.column].xBeforeText = x2;
+                            cols[el.column].xAfterText = x1;
+                        }
                         let s = group.querySelector('line.segment[data-to^="'+el.column+(pStartingY+(TEXT_HEIGHT>>1))+'"]');
                         if(s){
-                            s.setAttribute("x2", cols[el.column].xBeforeText - LINE_MARGIN);
+                            let coef = this.direction === "right"?1:-1;
+                            let nx2 = String(cols[el.column].xBeforeText - (LINE_MARGIN*coef));
+                            if(s.getAttribute('x1') === s.getAttribute("x2")){
+                                s.setAttribute("x1", nx2);
+                            }
+                            s.setAttribute("x2", nx2);
+                            group.querySelectorAll('*[data-segment="'+s.getAttribute("id")+'"]').forEach(function(pElement){
+                                let descBox = pElement.getBBox();
+                                pElement.setAttribute("x", ((Number(s.getAttribute('x1')) + Number(s.getAttribute('x2')))>>1) - (descBox.width>>1));
+                            });
                         }
                         break;
                     case "segment":
                         addTextHeight = true;
                         let one = el.columns[0];
                         let sec = el.columns[1];
-                        if(cols[one].index > cols[sec].index){
-                            one = el.columns[1];
-                            sec = el.columns[0];
-                        }
-                        let xfrom = cols[one].xAfterText + LINE_MARGIN;
-                        let xto = cols[sec].xBeforeText - LINE_MARGIN;
+                        let coef = this.direction === "right"?1:-1;
+                        let xfrom = cols[one].xAfterText + (LINE_MARGIN*coef);
+                        let xto = cols[sec].xBeforeText - (LINE_MARGIN*coef);
                         let yfrom = pStartingY + (TEXT_HEIGHT>>1)
                         let yto = yfrom;
                         if(one===sec){
                             yto += TEXT_HEIGHT;
                             pStartingY += TEXT_HEIGHT;
                             xto = xfrom;
+                            this.direction = this.direction==="right"?"left":"right";
                         }
-                        let attr = {class:'segment', 'x1':xfrom, "y1":yfrom, "x2":xto, "y2":yto, "data-from":one+yfrom, "data-to":sec+yto};
+                        let idSec = 'seg_'+one+sec+yfrom;
+                        let attr = {id:idSec, class:'segment', 'x1':xfrom, "y1":yfrom, "x2":xto, "y2":yto, "data-from":one+yfrom, "data-to":sec+yto};
                         if(el.class === "dashed"){
                             attr['stroke-dasharray'] = '5,5';
                         }
                         let line = SVGElement.create('line', attr, group);
 
-                        if(el.arrows.indexOf(one) !== -1){
+                        if(el.arrows[0] === one){
                             line.setAttribute("marker-start", "url(#arrowLeft)");
                         }
-                        if(el.arrows.indexOf(sec) !== -1){
+                        if(el.arrows[1] === sec){
                             line.setAttribute("marker-end", "url(#arrowRight)");
+                        }
+                        if(el.description){
+                            let desc = SVGElement.create('text', {innerHTML:el.description, x:xfrom, y:yfrom  - 10, class:'segment_description', 'data-segment':idSec}, group);
+                            let descBox = desc.getBBox();
+                            desc.setAttribute("x", ((xfrom + xto)>>1) - (descBox.width>>1));
+                            SVGElement.create('rect', {width:descBox.width, height:descBox.height, x:desc.getAttribute("x"), y:descBox.y, fill:'#fff', 'data-segment':idSec}, group, desc);
                         }
                         break;
                 }
@@ -171,7 +193,11 @@
             let parser = null;
 
             let parseColumn = function(pInstruction){
-                return pInstruction.replace(SPACE_INSTRUCTIONS, '').split(':').reverse();
+                let params = pInstruction.replace(SPACE_INSTRUCTIONS, '').split(':').reverse();
+                if(params.length===1){
+                    params.push(params[0].toLowerCase());
+                }
+                return params;
             };
             let parseSequence = function(pInstruction){
                 pInstruction = pInstruction.replace(SPACE_INSTRUCTIONS, '');
@@ -181,21 +207,25 @@
                 }
                 let re = /(<-+>|<-+|-+>|-+)/;
                 if(re.test(pInstruction)){
+                    let parts = pInstruction.split(':');
+                    pInstruction = parts[0];
+                    let comment = parts[1]||'';
+
                     action = 'addSegment';
                     let cls = "segment";
-                    let arrows = [];
+                    let arrows = [null, null];
                     let cols = pInstruction.split(re);
                     let type = cols.splice(1, 1);
                     if(/--/.test(type)){
                         cls = "dashed";
                     }
                     if(pInstruction.indexOf('<')!==-1){
-                        arrows.push(cols[0]);
+                        arrows[0] = cols[0];
                     }
                     if(pInstruction.indexOf('>')!==-1){
-                        arrows.push(cols[1]);
+                        arrows[1] = cols[1];
                     }
-                    return [cols, arrows, cls];
+                    return [cols, arrows, cls, comment];
                 }
                 action = 'addText';
                 return pInstruction.split(':');
@@ -240,20 +270,20 @@
 
 
     function evalAndRenderHandler(e){
+        let children = document.querySelectorAll('#tree svg>*:not(defs)');
+        children.forEach(function(pNode){
+            pNode.parentNode.removeChild(pNode);
+        });
         let desc = document.querySelector('#description').value.split('\n');
         let entity = desc.shift();
         let instance;
         switch(entity){
-            case "Sequential:":
+            case "Sequential":
                 instance = new Sequential();
                 break;
             default:
                 return;
         }
-        let children = document.querySelectorAll('#tree svg>*:not(defs)');
-        children.forEach(function(pNode){
-            pNode.parentNode.removeChild(pNode);
-        });
         instance.evaluate(desc);
         instance.render(document.querySelector('#tree svg'))
     }

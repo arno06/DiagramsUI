@@ -42,6 +42,7 @@ svg.design_mode{background-color: #c0ebff;background-image: linear-gradient(whit
 svg line.separator{stroke:#666666;stroke-width:1px;}
 svg line.segment{stroke:black;stroke-width:2px;}
 svg line.separator{stroke:#999;stroke-width:2px;}
+svg text.segment_description{fill:#999;font-size:10px;}
 
 svg .zone+circle.target{opacity: 0;cursor:pointer;fill:#aaa;fill-opacity: 1;stroke:#ddd; stroke-width: 3px;transition:all .3s;}
 
