@@ -36,7 +36,7 @@
     </div>
     <div class="properties_editor">
         <p>
-            <textarea id="description" rows="30" style="width: 100%;resize:none;border:none;">Sequential
+            <textarea spellcheck="false" id="description" rows="30" style="width: 100%;resize:none;border:none;">Sequential
     columns
         user:Utilisateur
         site:exemple.fr
@@ -61,7 +61,8 @@
         user->oauth2
         oauth2:bouboup
 </textarea>
-            <input type="button" value="Dessiner" id="draw_button">
+            <input type="button" value="Dessiner" id="draw_button" style="display: none;">
+            <span id="rendering"></span>
         </p>
     </div>
 </div>

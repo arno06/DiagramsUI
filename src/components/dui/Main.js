@@ -5,6 +5,7 @@
     const SEPARATOR_MARGIN = 10;
     const GENERIC_MARGIN = 10;
     const SPACE_INSTRUCTIONS = '    ';
+    let renderTO;
 
     class Sequence{
         constructor(pTitle = null, pColumns = []){
@@ -159,6 +160,11 @@
         }
 
         render(pSvg){
+            //reset
+            let children = pSvg.querySelectorAll(':scope>*:not(defs)');
+            children.forEach(function(pNode){
+                pNode.parentNode.removeChild(pNode);
+            });
             let w = pSvg.width.baseVal.value - (GENERIC_MARGIN<<1);
             let count = this.columns.length;
 
@@ -184,6 +190,12 @@
                 pSeq.render(pSvg, currentY, distance);
                 currentY = pSeq.endingY;
             });
+            if(currentY>pSvg.getBoundingClientRect().height){
+                pSvg.setAttribute('height', currentY+'px');
+                pSvg.querySelectorAll(':scope>line.separator').forEach((pLine)=>{
+                    pLine.setAttribute("y2", currentY);
+                });
+            }
         }
 
         evaluate(pDescription){
@@ -191,6 +203,7 @@
             let context = this;
             let action = null;
             let parser = null;
+            let currentCursor = null;
 
             let parseColumn = function(pInstruction){
                 let params = pInstruction.replace(SPACE_INSTRUCTIONS, '').split(':').reverse();
@@ -219,6 +232,8 @@
                     if(/--/.test(type)){
                         cls = "dashed";
                     }
+                    cols[0] = cols[0]||currentCursor;
+                    currentCursor = cols[1];
                     if(pInstruction.indexOf('<')!==-1){
                         arrows[0] = cols[0];
                     }
@@ -228,7 +243,9 @@
                     return [cols, arrows, cls, comment];
                 }
                 action = 'addText';
-                return pInstruction.split(':');
+                const r = pInstruction.split(':');
+                currentCursor = r[0]||currentCursor;
+                return r;
             }
             pDescription = pDescription.map(function(pEntry){
                 return pEntry.replace(SPACE_INSTRUCTIONS, '');
@@ -263,29 +280,64 @@
 
 
     function init(){
-        let svg = document.querySelector('#tree svg');
-
         document.querySelector('#draw_button').addEventListener('click', evalAndRenderHandler);
+        document.querySelector('#description').addEventListener('keydown', keyDownHandler);
+        document.querySelector('#description').addEventListener('keyup', keyUpHandler);
+        evalAndRenderHandler();
     }
 
-
-    function evalAndRenderHandler(e){
-        let children = document.querySelectorAll('#tree svg>*:not(defs)');
-        children.forEach(function(pNode){
-            pNode.parentNode.removeChild(pNode);
-        });
-        let desc = document.querySelector('#description').value.split('\n');
-        let entity = desc.shift();
-        let instance;
-        switch(entity){
-            case "Sequential":
-                instance = new Sequential();
-                break;
-            default:
-                return;
+    function keyDownHandler(e){
+        if(e.keyCode === 9){
+            e.preventDefault();
         }
-        instance.evaluate(desc);
-        instance.render(document.querySelector('#tree svg'))
+    }
+
+    function keyUpHandler(e){
+        switch(e.keyCode){
+            case 13:
+                let val = e.currentTarget.value;
+                let startSel = e.currentTarget.selectionStart;
+                let newline = /\n/.test(val.substring(startSel-1,startSel));
+                if(newline){
+                    let index = startSel-2;
+                    let nl = false;
+                    while(index>0 && !nl){
+                        nl = /\n/.test(val.substring(index, index+1));
+                        if(nl){
+                            let c = /\s+/.exec(val.substring(index+1, startSel-1));
+                            e.currentTarget.value = val.substring(0, startSel) + c[0]+val.substring(startSel, val.length);
+                            e.currentTarget.setSelectionRange(startSel+c[0].length, startSel+c[0].length);
+                            break;
+                        }else{
+                            index -= 1;
+                        }
+                    }
+                }
+                break;
+        }
+        evalAndRenderHandler();
+    }
+
+    function evalAndRenderHandler(){
+        if(renderTO){
+            clearTimeout(renderTO);
+        }
+        renderTO = setTimeout(()=>{
+            let desc = document.querySelector('#description').value.split('\n');
+            let entity = desc.shift();
+            let instance;
+            switch(entity){
+                case "Sequential":
+                    instance = new Sequential();
+                    break;
+                default:
+                    return;
+            }
+            let t = new Date().getTime();
+            instance.evaluate(desc);
+            instance.render(document.querySelector('#tree svg'));
+            document.querySelector('#rendering').innerHTML = ((new Date()).getTime()-t)+"ms";
+        }, 250);
     }
 
     window.addEventListener('DOMContentLoaded', init);

@@ -9,7 +9,9 @@ svg *{font-family: Arial, sans-serif;outline:none;}
 .builder_container .svg{flex:1 1 auto;overflow:auto;}
 .builder_container svg *{user-select:none;}
 
-.builder_container .properties_editor{width:300px;background:#f0f0f0;flex:0 0 auto;}
+.builder_container .properties_editor{width:300px;background:#f0f0f0;flex:0 0 auto;position:relative;}
+.builder_container .properties_editor p{margin:0;}
+.builder_container .properties_editor #rendering{font-size:10px;background:#fff;padding:3px;position:absolute;bottom:5px;right:5px;}
 
 svg text{pointer-events: none;}
 
