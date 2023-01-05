@@ -37,6 +37,10 @@
             this.elements.push({type:'separator'});
         }
 
+        addBreakLine(){
+            this.elements.push({type:'breakline'});
+        }
+
         render(pSvg, pStartingY, pDistance){
             let addTextHeight = false;
             let group = SVGElement.create('g', {}, pSvg);
@@ -57,9 +61,13 @@
                         break;
                     case "separator":
                         addTextHeight = false;
-                        let y =pStartingY + TEXT_HEIGHT + SEPARATOR_MARGIN;
+                        let y = pStartingY + TEXT_HEIGHT + SEPARATOR_MARGIN;
                         SVGElement.create('line', {class:'separator', x1:GENERIC_MARGIN, y1:y, x2:(pDistance*this.columns.length) + GENERIC_MARGIN, y2:y}, group);
                         pStartingY = y + SEPARATOR_MARGIN;
+                        break;
+                    case "breakline":
+                        addTextHeight = false;
+                        pStartingY +=  TEXT_HEIGHT + (SEPARATOR_MARGIN<<1);
                         break;
                     case "text":
                         addTextHeight = true;
@@ -218,6 +226,11 @@
                     action = 'addSeparator';
                     return [];
                 }
+                if(pInstruction==='//'){
+                    console.log("addBreakLine");
+                    action = 'addBreakLine';
+                    return [];
+                }
                 let re = /(<-+>|<-+|-+>|-+)/;
                 if(re.test(pInstruction)){
                     let parts = pInstruction.split(':');
@@ -267,6 +280,9 @@
                         action = 'sequence';
                         parser = parseSequence;
                         return;
+                    case "//":
+                        context.addBreakLine();
+                        break;
                     case "---":
                         context.addSeparator();
                         break;
@@ -280,10 +296,23 @@
 
 
     function init(){
-        document.querySelector('#draw_button').addEventListener('click', evalAndRenderHandler);
+        document.querySelector('#export').addEventListener('click', exportHandler);
         document.querySelector('#description').addEventListener('keydown', keyDownHandler);
         document.querySelector('#description').addEventListener('keyup', keyUpHandler);
         evalAndRenderHandler();
+    }
+
+    function exportHandler(){
+        Request.load('components/dui/style.css').onComplete(function(pEvent){
+            SVGElement.toPNG(document.querySelector('#tree svg'), pEvent.currentTarget.responseText, ['https://fonts.googleapis.com/css?family=Roboto']).then((pPng)=>{
+                let a = document.createElement("a");
+                a.setAttribute("download", "diagram.png");
+                a.setAttribute("href", pPng);
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            });
+        });
     }
 
     function keyDownHandler(e){

@@ -6,21 +6,13 @@
     <title>
         DiagramsUI
     </title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
     <link href="components/dui/style.css" rel="stylesheet">
+    <script src="https://dependencies.arnaud-nicolas.fr/?need=Request.es6"></script>
     <script src="components/tools/common.js"></script>
     <script src="components/dui/Main.js"></script>
 </head>
 <body>
-<div class="ui_helper" style="display:none;">
-    <ul>
-        <li><a href="">Commencer</a></li>
-        <li><a href="">Etape</a></li>
-        <li><a href="">Texte</a></li>
-        <li><a href="">Icône</a></li>
-    </ul>
-</div>
 <div class="builder_container">
     <div class="svg" id="tree">
         <svg width="100%" height="100%" class="design_mode2">
@@ -39,29 +31,51 @@
             <textarea spellcheck="false" id="description" rows="30" style="width: 100%;resize:none;border:none;">Sequential
     columns
         user:Utilisateur
-        site:exemple.fr
+        site:www.vidal.fr
         oauth2:Oauth2
-        idp:IDP
+        idp:VIDALID
+        2fa:VIDAL Mobile
     sequence:Hello Sequence 1
         user:Visite
-        user->site:Description de segment
+        user->site:accède au BO
         site:non connecté
         site->oauth2
-        oauth2:Dans le SSO
-        oauth2<->idp
-        idp:bouboup
+        oauth2:Connexion
+        oauth2->idp:login + mot de passe
         idp->idp
-        idp:second part
-        idp-->site
-        site:Test
-        ---
-        site:Hello world
+        idp->oauth2:Credentials valides
+        oauth2:Si l'utilisateur utilise<br/>VIDAL Mobile
+        oauth2->oauth2
+        oauth2:Challenge 2FA
+        oauth2->2fa
+        2fa:Affichage du challenge
+        2fa->2fa
+        2fa->oauth2:Confirmation de la 2FA
+        oauth2:Renforcement de la session<br/>avec la mention de vérification 2FA
+        oauth2->site
+        site:Récupération du profile avec 2FA, session "forte", découplage de l'oauth2
 ---
     sequence:Hello Sequence 2
-        user->oauth2
-        oauth2:bouboup
+        user:Visite
+        ->site:accède au BO
+        site:non connecté
+        ->oauth2
+        oauth2:Connexion
+        ->idp:login + mot de passe
+        ->idp
+        ->oauth2:Credentials valides
+        oauth2:Si l'utilisateur utilise<br/>VIDAL Mobile
+        ->oauth2
+        oauth2:Challenge 2FA
+        ->2fa
+        2fa:Affichage du challenge
+        ->2fa
+        ->oauth2:Confirmation de la 2FA
+        oauth2:Renforcement de la session<br/>avec la mention de vérification 2FA
+        ->site
+        site:Récupération du profile avec 2FA, session "forte", découplage de l'oauth2
 </textarea>
-            <input type="button" value="Dessiner" id="draw_button" style="display: none;">
+            <input type="button" value="Exporter en PNG" id="export">
             <span id="rendering"></span>
         </p>
     </div>

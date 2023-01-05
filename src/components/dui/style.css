@@ -57,8 +57,6 @@ svg rect.selector{fill:rgba(51, 153, 255, .35);stroke:rgba(51, 153, 255, 1);stro
 
 .properties_editor .actions, .properties_editor .global-actions{text-align: center;}
 
-.properties_editor .global-actions .material-icons{margin:0 4px;}
-
 .properties_editor .global-actions button, .properties_editor .actions button, .properties_editor .properties .add_link_handler button{ display:inline-block;padding:7px 7px 7px 0;margin:5px auto 0;background:#217ebd;border:none;color:#fff;border-radius:3px;cursor:pointer;}
 .properties_editor .actions button.delete{background: #e51926;margin-left:5px;}
 .properties_editor .global-actions span, .properties_editor .actions span{vertical-align: middle;}
