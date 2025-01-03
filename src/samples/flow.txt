@@ -1,0 +1,6 @@
+Flow
+    blocs
+        test:[Je suis un rectangle]@100,100,200,50
+        test2:(Je suis un disque)@100,300,50
+        test3:/Je suis un triangle\@400,100,60
+        test4:/Je suis un losange/@400,300,100,200

@@ -28,52 +28,16 @@
     </div>
     <div class="properties_editor">
         <p>
-            <textarea spellcheck="false" id="description" rows="30" style="width: 100%;resize:none;border:none;">Sequential
-    columns
-        user:Utilisateur
-        site:www.vidal.fr
-        oauth2:Oauth2
-        idp:VIDALID
-        2fa:VIDAL Mobile
-    sequence:Hello Sequence 1
-        user:Visite
-        user->site:accède au BO
-        site:non connecté
-        site->oauth2
-        oauth2:Connexion
-        oauth2->idp:login + mot de passe
-        idp->idp
-        idp->oauth2:Credentials valides
-        oauth2:Si l'utilisateur utilise<br/>VIDAL Mobile
-        oauth2->oauth2
-        oauth2:Challenge 2FA
-        oauth2->2fa
-        2fa:Affichage du challenge
-        2fa->2fa
-        2fa->oauth2:Confirmation de la 2FA
-        oauth2:Renforcement de la session<br/>avec la mention de vérification 2FA
-        oauth2->site
-        site:Récupération du profile avec 2FA, session "forte", découplage de l'oauth2
----
-    sequence:Hello Sequence 2
-        user:Visite
-        ->site:accède au BO
-        site:non connecté
-        ->oauth2
-        oauth2:Connexion
-        ->idp:login + mot de passe
-        ->idp
-        ->oauth2:Credentials valides
-        oauth2:Si l'utilisateur utilise<br/>VIDAL Mobile
-        ->oauth2
-        oauth2:Challenge 2FA
-        ->2fa
-        2fa:Affichage du challenge
-        ->2fa
-        ->oauth2:Confirmation de la 2FA
-        oauth2:Renforcement de la session<br/>avec la mention de vérification 2FA
-        ->site
-        site:Récupération du profile avec 2FA, session "forte", découplage de l'oauth2
+            <textarea spellcheck="false" id="description" rows="30" style="width: 100%;resize:none;border:none;">Flow
+    blocs
+        test:[Je suis un rectangle]@100,100,200,50
+        test2:(Je suis un disque)@130,300,50
+        test3:/Je suis un triangle\@400,100,60
+        test4:/Je suis un losange/@400,300,50,50
+    links
+        test->test2
+        test-test3
+        test3->test4
 </textarea>
             <input type="button" value="Exporter en PNG" id="export">
             <span id="rendering"></span>

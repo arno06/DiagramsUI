@@ -168,11 +168,6 @@
         }
 
         render(pSvg){
-            //reset
-            let children = pSvg.querySelectorAll(':scope>*:not(defs)');
-            children.forEach(function(pNode){
-                pNode.parentNode.removeChild(pNode);
-            });
             let w = pSvg.width.baseVal.value - (GENERIC_MARGIN<<1);
             let count = this.columns.length;
 
@@ -294,6 +289,224 @@
         }
     }
 
+    class Flow
+    {
+        _blocks = {};
+        _lines = [];
+
+        constructor() {
+
+        }
+
+        addBlock(pId, pType, pDimensions, pContent = ""){
+            console.log("addBlock");
+            console.log(arguments);
+            //top,right,bottom,left
+            let anchors = [];
+            let element;
+            let x = pDimensions[0];
+            let y = pDimensions[1];
+            let points;
+            switch(pType){
+                case "rectangle":
+                    element = SVGElement.create("rect", {
+                        x:0,
+                        y:0,
+                        width:pDimensions[2],
+                        height:pDimensions[3],
+                    });
+                    anchors = [
+                        [x+(pDimensions[2]/2), y],
+                        [x+pDimensions[2], y+(pDimensions[3]/2)],
+                        [x+(pDimensions[2]/2), y + pDimensions[3]],
+                        [x, y+(pDimensions[3]/2)]
+                    ];
+                    break;
+                case "circle":
+                    element = SVGElement.create("circle", {
+                        cx:0,
+                        cy:0,
+                        r:pDimensions[2]
+                    });
+                    anchors = [
+                        [x, y - pDimensions[2]],
+                        [x+pDimensions[2], y],
+                        [x, y + pDimensions[2]],
+                        [x-pDimensions[2], y]
+                    ];
+                    break;
+                case "triangle":
+                    let side = pDimensions[2];
+                    let ny = Math.sqrt((side * side) - ((side/2) * (side/2)));
+                    points = ["0,0", (side/2)+","+(ny), (-(side/2))+","+(ny)];
+                    element = SVGElement.create("polygon", {
+                        points:points.join(" ")
+                    });
+                    anchors = [
+                        [x, y],
+                        [(x + (x+(side/2)))/2, (y + (y+ny))/2],
+                        [x, y+ny],
+                        [(x + (x-(side/2)))/2, (y + (y+ny))/2],
+                    ];
+                    break;
+                case "diamond":
+                    let w = pDimensions[2];
+                    let h = pDimensions[3];
+                    points = ["0,0", (w/2)+","+(h/2), "0,"+(h), (-(w/2))+","+(h/2)];
+                    element = SVGElement.create("polygon", {
+                        points:points.join(" ")
+                    });
+                    anchors = [
+                        [x, y],
+                        [x+(w/2), y + (h/2)],
+                        [x, y + h],
+                        [x-(w/2), y + (h/2)]
+                    ];
+                    break;
+                default:
+                    return;
+            }
+            const group = SVGElement.create("g", {
+                "class":"block_element",
+                "transform":"translate("+x+","+y+")"
+            });
+            const txt = SVGElement.create("foreignObject",{width:pDimensions[2], height:100});
+            txt.innerHTML = "<div>"+pContent+"</div>";
+            group.appendChild(element);
+            group.appendChild(txt);
+            this._blocks[pId] = {
+                element:group,
+                position:[x,y],
+                anchors:anchors
+            };
+        }
+
+        addLink(pFrom, pTo){
+            if(!pFrom || !pTo){
+                return;
+            }
+            let attr = {class:'segment', 'x1':pFrom[0], "y1":pFrom[1], "x2":pTo[0], "y2":pTo[1]};
+            let line = SVGElement.create('line', attr);
+            this._lines.push(line);
+        }
+
+        evaluate(pDescription){
+            let ref = this;
+            let context = this;
+            let action = null;
+            let parser = null;
+            let currentCursor = null;
+
+            const parseBlock = function(pInstructions){
+                let parts = pInstructions.split(":");
+                const id = parts[0].trim();
+                parts = parts[1].split("@");
+                const dimensions = parts[1].split(",");
+
+                let content = "";
+                let infos = "";
+                let type = "rect";
+
+                if((infos = /\[([^\]]*)]/.exec(parts[0])) !== null){
+                    type = "rectangle";
+                    content = infos[1];
+                }
+                if((infos = /\(([^\]]*)\)/.exec(parts[0])) !== null){
+                    type = "circle";
+                    content = infos[1];
+                }
+                if((infos = /\/([^\]]*)\\/.exec(parts[0])) !== null){
+                    type = "triangle";
+                    content = infos[1];
+                }
+                if((infos = /\/([^\]]*)\//.exec(parts[0])) !== null){
+                    type = "diamond";
+                    content = infos[1];
+                }
+
+                return [id, type, dimensions.map(Number), content];
+            };
+
+            const parseLink = function(pInstruction){
+                pInstruction = pInstruction.replace(SPACE_INSTRUCTIONS, '');
+                let re = /(<-+>|<-+|-+>|-+)/;
+                if(re.test(pInstruction)){
+
+                    let cols = pInstruction.split(re);
+                    const b1 = ref._blocks[cols[0]];
+                    const b2 = ref._blocks[cols[2]];
+                    if(!b1 || !b2){
+                        return null;
+                    }
+
+                    let from = null;
+                    let to = null;
+                    let dist = null;
+
+                    b1.anchors.forEach((pC1)=>{
+                        b2.anchors.forEach((pC2)=>{
+                            let d = Math.sqrt(((pC2[0]-pC1[0]) * (pC2[0]-pC1[0])) + ((pC2[1]-pC1[1]) * (pC2[1]-pC1[1])));
+                            if(dist === null || dist > d){
+                                dist = d;
+                                from = pC1;
+                                to = pC2;
+                            }
+                        });
+                    });
+
+                    return [from, to];
+                }
+            };
+
+            pDescription = pDescription.map(function(pEntry){
+                return pEntry.replace(SPACE_INSTRUCTIONS, '');
+            });
+            pDescription.forEach(function(pInstruction){
+                if(context&&action&&pInstruction.indexOf(SPACE_INSTRUCTIONS)===0){
+                    let params = parser(pInstruction);
+                    context[action].apply(context, params);
+                    return;
+                }
+                let type = pInstruction.split(':');
+                switch(type[0]){
+                    case "blocs":
+                        action = 'addBlock';
+                        parser = parseBlock;
+                        return;
+                    case "links":
+                        action = 'addLink';
+                        parser = parseLink;
+                        return;
+                    default:
+                        action = null;
+                        return;
+                }
+            });
+        }
+
+        render(pSvg){
+            for(let i in this._blocks){
+                let element = this._blocks[i].element;
+                pSvg.appendChild(element);
+
+                continue;
+                this._blocks[i].anchors.forEach((pCoord)=>{
+                    SVGElement.create("rect", {
+                        fill:"pink",
+                        x:pCoord[0]-5,
+                        y:pCoord[1]-5,
+                        width:10,
+                        height:10
+                    }, pSvg);
+                });
+            }
+
+            this._lines.forEach((pLine)=>{
+                pSvg.appendChild(pLine);
+            });
+        }
+    }
+
 
     function init(){
         document.querySelector('#export').addEventListener('click', exportHandler);
@@ -352,6 +565,13 @@
             clearTimeout(renderTO);
         }
         renderTO = setTimeout(()=>{
+            const svg = document.querySelector('#tree svg');
+            //reset
+            let children = svg.querySelectorAll(':scope>*:not(defs)');
+            children.forEach(function(pNode){
+                pNode.parentNode.removeChild(pNode);
+            });
+
             let desc = document.querySelector('#description').value.split('\n');
             let entity = desc.shift();
             let instance;
@@ -359,12 +579,15 @@
                 case "Sequential":
                     instance = new Sequential();
                     break;
+                case "Flow":
+                    instance = new Flow();
+                    break;
                 default:
                     return;
             }
             let t = new Date().getTime();
             instance.evaluate(desc);
-            instance.render(document.querySelector('#tree svg'));
+            instance.render(svg);
             document.querySelector('#rendering').innerHTML = ((new Date()).getTime()-t)+"ms";
         }, 250);
     }

@@ -120,3 +120,7 @@ svg rect.selector{fill:rgba(51, 153, 255, .35);stroke:rgba(51, 153, 255, 1);stro
 .ui_helper>ul{display:flex;list-style: none;padding:0;margin:0;z-index:2;}
 .ui_helper>ul>li{padding:0;margin:0;}
 .ui_helper>ul>li>a{display:block;padding:10px;font-size:11px;}
+
+.block_element{fill:transparent;stroke:gray;stroke-width: 2;}
+
+.block_element foreignObject>div{font-size:9px;}
